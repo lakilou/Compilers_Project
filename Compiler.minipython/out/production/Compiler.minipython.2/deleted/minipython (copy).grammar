@@ -1,0 +1,272 @@
+Package minipython;
+
+/* ΛΟΥΛΑΚΗΣ ΙΩΑΝΝΗΣ, 3180262
+ * ΛΙΟΝΗΣ ΝΙΚΟΛΑΟΣ, 3180098
+ * ΔΗΜΗΤΡΙΟΣ CHOTZALLI, 3180205*/
+
+
+
+Helpers
+	digit = ['0' .. '9'];
+	letter = ['a' .. 'z']|['A' .. 'Z']; 
+	cr = 13; 
+	lf = 10;
+	all = [0..127]; 
+	eol = lf | cr | cr lf ;
+	not_eol = [all - [cr + lf]]; 
+
+Tokens
+	import = 'import';
+	as = 'as';
+	dot = '.';
+	from = 'from';
+	tab = 9;
+	plus = '+';
+	minus = '-';
+	mult = '*';
+	pow = '**';
+	div = '/';
+	floor_div = '//';
+	mod = '%';
+	assign = '=';
+	minus_eq = '-=';
+	plus_eq = '+=';
+	div_eq = '/=';	
+	mult_eq = '*=';
+	exclam = '!';
+	dictt = 'dict';
+	def = 'def';
+	logic_plus = '&&';
+	l_par = '(';
+	r_par = ')';
+	l_br = '[';
+	r_br = ']';
+	and = 'and';
+	or = 'or';
+	not = 'not';
+	comma = ',';
+	qmark = '?';
+	gqmark = ';';
+	assert = 'assert';
+	len = 'len';
+	max = 'max';
+	min = 'min';
+	if = 'if';
+	elif = 'elif';
+	else = 'else';
+	while = 'while';
+	for = 'for';
+	in = 'in';
+	print = 'print';
+	return = 'return';
+	less = '<';
+	great = '>';
+	great_eq = '>=';
+	less_eq = '<=';
+	diff = '!=';
+	equal = '==';
+	true = 'true';
+	semi = ':';
+	false = 'false';
+	quote = '"';
+	blank = (' ' | lf | cr);
+	line_comment = '#' not_eol* eol; 
+	integer_literal = digit+ | (digit+ '.' digit+);
+	identifier = letter (letter | digit)*;
+	string = '"'not_eol* '"' |'''not_eol* ''';
+	none = 'None';
+
+Ignored Tokens
+	blank, line_comment;
+	
+Productions
+	programme 			= commands* {-> New programme( [commands] )};
+	
+	commands			= {stat} statement {-> New commands.stat( statement )} |
+				  	  {function} function {-> New commands.function( function )};
+	
+	function			= def identifier l_par argument? r_par semi statement {
+							-> New function(identifier, argument, statement)};
+
+	argument 			= identifier assign_value? comma_id_assign_value* {
+							-> New argument(New value.identifier(identifier), assign_value.value, [comma_id_assign_value.value] )};
+	
+	comma_id_assign_value{->value} = {comma_id_assign_value} comma  identifier assign_value? {
+							-> New value.comma_id_assign_value(identifier, assign_value.value)};
+	
+	assign_value{->value}		= {assign_value} assign value {-> value};
+		  	  
+	statement			= {if} tab* if comparison semi statement {-> New statement.if(comparison, statement)} | 
+					  {while} tab* while comparison semi statement {-> New statement.while(comparison, statement)} | 
+			   		  {for} tab* for [start]:identifier in [end]:identifier semi statement{-> New statement.for(start, end, statement)} | 
+			   		  {return} tab* return expression {-> New statement.return(expression)}  | 
+			   		  {print} tab* print expression comma_expr* {-> New statement.print(expression, [comma_expr.expression])} | 
+			   		  {assignment} tab* assignment {-> assignment.statement} | 
+			   		  {array_slice} tab* identifier l_br [expr1]:expression semi [expr2]:expression r_br {
+			   		  	-> New statement.array_slice(identifier, expr1, expr2)} | 
+			   		  {assert} tab* assert expression comma_expr? {-> New statement.assert(expression, comma_expr.expression)} | 
+			   		  {function_call} tab* function_call {-> New statement.function_call(function_call)} | 
+			   		  {import} import_module {-> import_module.statement};
+			   		  
+	
+	import_module{->statement}	= {import} import module as_id? comma_module_as_id* {
+							-> New statement.import(module.expression, as_id.expression, [comma_module_as_id.expression] )} | 
+			    		  {from_import} from module import id as_id? comma_id_as_id* {
+			    		  		-> New statement.from_import(module.expression, id.expression, as_id.expression, [comma_id_as_id.expression] )};
+	
+	comma_module_as_id{->expression*} = {comma_module_as_id} comma module as_id? {-> [module.expression as_id.expression] };
+			    		  		
+	comma_id_as_id{->expression*}	= {comma_id_as_id} comma id as_id? {-> [id.expression as_id.expression]};
+			    		  		
+	as_id{->expression}		= {as_id} as id {-> id.expression};
+			    		  
+	module{->expression}		= {module} id_dot* id {-> New expression.module( [id_dot.expression], id.expression)};
+	
+	id_dot{->expression}		= {id_dot} id dot{-> id.expression};
+			   		  
+			   		  
+	assignment{->statement}	= {assign} identifier assign expression {-> New statement.assign(identifier, expression)} | 
+					  {assign_array} identifier l_br [expr1]:expression r_br assign [expr2]:expression {
+					  		-> New statement.assign_array(identifier, expr1, expr2)} | 
+					  {minus_eq} identifier minus_eq expression {-> New statement.minus_eq(identifier, expression)} | 
+			   		  {plus_eq} identifier plus_eq expression {-> New statement.plus_eq(identifier, expression)} | 
+			   		  {mult_eq} identifier mult_eq expression {-> New statement.mult_eq(identifier, expression)} | 
+			   		  {div_eq} identifier div_eq expression {-> New statement.div_eq(identifier, expression)};
+			   		  
+	expression			= {add_sub} add_sub {-> add_sub.expression};
+					  
+	add_sub{->expression}		= {mult_div_mod} mult_div_mod {-> mult_div_mod.expression} | 
+					  {addition} expression plus mult_div_mod {-> New expression.addition(expression, mult_div_mod.expression)} | 
+			    		  {subtraction} expression minus mult_div_mod {-> New expression.subtraction(expression, mult_div_mod.expression)};
+	
+	mult_div_mod{->expression}	= {power} power {-> power.expression} | 
+					  {multiplication} mult_div_mod mult power {-> New expression.multiplication(mult_div_mod.expression, power.expression)} | 
+	                   		  {division} mult_div_mod div power {-> New expression.division(mult_div_mod.expression, power.expression)} | 
+	                   		  {floor_div} mult_div_mod floor_div power {-> New expression.floor_div(mult_div_mod.expression, power.expression)} | 
+	                   		  {modulus} mult_div_mod mod power {-> New expression.modulus(mult_div_mod.expression, power.expression)};	
+	
+	power{->expression}		= {subscription} subscription {-> subscription.expression} | 
+					  {power} power pow subscription {-> New expression.power(power.expression, subscription.expression)};
+	
+	subscription{->expression}	= {func_c} func_c {-> func_c.expression} | 
+					  {subscription} identifier l_br expression r_br {-> New expression.subscription(identifier, expression)};
+	
+	func_c{->expression}		= {parentheses} parentheses {-> parentheses.expression} | 
+					  {len} len l_par expression r_par {-> New expression.len(expression)} | 
+			    		  {min} min l_par value comma_value* r_par {-> New expression.min(value, [comma_value.value]) } | 
+			    		  {max} max l_par value comma_value* r_par {-> New expression.max(value, [comma_value.value]) } | 
+			    		  {list} l_br expression comma_expr* r_br {-> New expression.list(expression, [comma_expr.expression] )} | 
+			    		  {function_call} function_call {-> New expression.function_call(function_call)};
+			    		  	  
+	comma_value{->value}		= {comma_value} comma value {-> value};
+	
+	parentheses{->expression}	= {something} something {-> something.expression} | 
+					  {parentheses} l_par expression r_par {-> expression};
+	
+	something{->expression}	= {value} value {-> New expression.value(value)} | 
+					  {id} id {-> id.expression};	
+					  
+	id{->expression}		= {identifier} identifier {-> New expression.identifier(identifier)};
+	
+	value				= {number} number {-> number.value} | 
+					  {string} string {-> New value.string(string)} | 
+		           	  	  {none} none {-> New value.none(none)} | 
+					  {id_function_call} identifier dot function_call {-> New value.id_function_call(identifier, function_call)};
+				
+	number{->value}		= {integer_literal} integer_literal {-> New value.number(integer_literal)};	  
+		
+	function_call			= {function_call} identifier l_par arglist? r_par {-> New function_call(identifier, [arglist.expression] )};
+	
+	arglist {->expression*}	= {arg_list} expression comma_expr* {-> [expression comma_expr.expression]};	  
+	 
+	comma_expr{->expression} 	= {comma_expr} comma expression {-> expression};
+	
+	comparison			= {or} logical_or {-> logical_or.comparison};
+	
+	logical_or{->comparison}	= {and} logical_and {-> logical_and.comparison} | 
+					  {or} logical_or or logical_and {-> New comparison.and(logical_or.comparison, logical_and.comparison)};
+	
+	logical_and{->comparison}	= {not} logical_not {-> logical_not.comparison} | 
+					  {and} logical_and and logical_not {-> New comparison.and(logical_and.comparison, logical_not.comparison)};
+	
+	logical_not{->comparison}	= {condition} condition {-> condition.comparison} | 
+					  {not} not condition {-> New comparison.not(condition.comparison)};
+	
+	condition{->comparison}	= {true} true {-> New comparison.true()} | 
+					  {false} false {-> New comparison.false()} | 
+					  
+					  {less} [expr1]:expression less [expr2]:expression {-> New comparison.less(expr1, expr2)} | 
+					  {great} [expr1]:expression great [expr2]:expression {-> New comparison.great(expr1, expr2)} | 
+					  {great_eq} [expr1]:expression great_eq [expr2]:expression {-> New comparison.great_eq(expr1, expr2)} | 
+					  {less_eq} [expr1]:expression less_eq [expr2]:expression {-> New comparison.less_eq(expr1, expr2)} | 
+					  {diff} [expr1]:expression diff [expr2]:expression {-> New comparison.diff(expr1, expr2)} | 
+					  {equal} [expr1]:expression equal [expr2]:expression {-> New comparison.equal(expr1, expr2)};
+					      		
+Abstract Syntax Tree
+	programme 			= commands*;
+	
+	commands			= {stat} statement |
+				 	  {function} function;
+				 	  
+	function			= identifier argument? statement;
+				 	  
+	argument 			= identifier [v1]:value? [v2]:value*;
+				 	  
+	statement			= {if} comparison statement | 
+					  {while} comparison statement | 
+					  {for} [start]:identifier [end]:identifier statement | 
+					  {return} expression | 
+					  {print} [expr1]:expression [expr2]:expression* | 
+					  {assign} identifier expression | 
+					  {assign_array} identifier [expr3]:expression [expr4]:expression | 
+					  {minus_eq} identifier expression | 
+					  {plus_eq} identifier expression | 
+					  {mult_eq} identifier expression | 
+					  {div_eq} identifier expression | 
+					  {array_slice} identifier [expr1]:expression [expr2]:expression | 
+					  {assert} [expr1]:expression [expr2]:expression | 
+					  {import} [expr0]:expression? [expr1]:expression? [expr2]:expression* | 
+					  {from_import} [expr0]:expression? [expr1]:expression [expr2]:expression? [expr3]:expression* | 
+					  {function_call} function_call;  
+					  
+	expression			= {identifier} identifier | 
+					  {value} value | 
+					  {len} expression | 
+					  {min} [v1]:value [v2]:value* | 
+					  {max} [v1]:value [v2]:value* | 
+					  {list} [expr1]:expression [expr2]:expression* | 
+					  {subscription} identifier expression | 
+					  {power} [expr1]:expression [expr2]:expression | 
+					  {multiplication} [expr1]:expression [expr2]:expression | 
+					  {division} [expr1]:expression [expr2]:expression | 
+					  {floor_div} [expr1]:expression [expr2]:expression | 
+					  {modulus} [expr1]:expression [expr2]:expression | 
+					  {addition} [expr1]:expression [expr2]:expression | 
+					  {subtraction} [expr1]:expression [expr2]:expression | 
+					  {function_call} function_call | 
+					  {module} [expr1]:expression* [expr2]:expression;			  
+					  
+	value				= {id_function_call} identifier function_call | 
+					  {identifier] identifier | 
+					  {string} string | 
+					  {number} integer_literal | 
+					  {none} none | 
+					  {assign_value} value | 
+					  {comma_id_assign_value} identifier value?;			  
+					  
+	function_call			= identifier expression*;
+	
+	comparison			= {true} | 
+					  {false} | 
+					  
+					  {less} [expr1]:expression [expr2]:expression | 
+					  {great} [expr1]:expression [expr2]:expression | 
+					  {great_eq} [expr1]:expression [expr2]:expression | 
+					  {less_eq} [expr1]:expression [expr2]:expression | 
+					  {diff} [expr1]:expression [expr2]:expression | 
+					  {equal} [expr1]:expression [expr2]:expression | 
+					  
+					  {not} comparison |
+					  {or} [comp1]:comparison [comp2]:comparison | 
+					  {and} [comp1]:comparison [comp2]:comparison;
+					  				  			    

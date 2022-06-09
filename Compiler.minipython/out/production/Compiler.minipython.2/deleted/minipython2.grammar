@@ -1,0 +1,209 @@
+Package minipython;
+
+/* ΛΟΥΛΑΚΗΣ ΙΩΑΝΝΗΣ, 3180262
+ * ΛΙΟΝΗΣ ΝΙΚΟΛΑΟΣ, 3180098
+ * ΔΗΜΗΤΡΙΟΣ CHOTZALLI, 3180205*/
+
+
+
+Helpers
+	digit = ['0' .. '9'];
+	letter = ['a' .. 'z']|['A' .. 'Z']; 
+	cr = 13; 
+	lf = 10;
+	all = [0..127]; 
+	eol = lf | cr | cr lf ;
+	not_eol = [all - [cr + lf]]; 
+
+Tokens
+	import = 'import';
+	as = 'as';
+	dot = '.';
+	from = 'from';
+	tab = 9;
+	plus = '+';
+	minus = '-';
+	mult = '*';
+	pow = '**';
+	div = '/';
+	floor_div = '//';
+	mod = '%';
+	assign = '=';
+	minus_eq = '-=';
+	plus_eq = '+=';
+	div_eq = '/=';	
+	mult_eq = '*=';
+	exclam = '!';
+	dictt = 'dict';
+	def = 'def';
+	logic_plus = '&&';
+	l_par = '(';
+	r_par = ')';
+	l_br = '[';
+	r_br = ']';
+	and = 'and';
+	or = 'or';
+	not = 'not';
+	comma = ',';
+	qmark = '?';
+	gqmark = ';';
+	assert = 'assert';
+	len = 'len';
+	max = 'max';
+	min = 'min';
+	if = 'if';
+	elif = 'elif';
+	else = 'else';
+	while = 'while';
+	for = 'for';
+	in = 'in';
+	print = 'print';
+	return = 'return';
+	less = '<';
+	great = '>';
+	great_eq = '>=';
+	less_eq = '<=';
+	diff = '!=';
+	equal = '==';
+	true = 'true';
+	semi = ':';
+	false = 'false';
+	quote = '"';
+	blank = (' ' | lf | cr);
+	line_comment = '#' not_eol* eol; 
+	number = digit+ | (digit+ '.' digit+);
+	identifier = letter (letter | digit)*;
+	string = '"'not_eol* '"' |'''not_eol* ''';
+	none = 'None';
+
+Ignored Tokens
+	blank, line_comment;
+	
+Productions
+	programme =     	{commands}    	commands*;
+	
+	commands =      	{stat}        	statement | 
+			 	{function}   	function_def;
+			
+/*---------------------------------------    function_def    ---------------------------------------*/
+
+	function_def =   	{function_def}   def identifier l_par argument? r_par semi statement;
+
+	argument = 	 	{argument}	identifier assign_value? comma_id_assign_value*;
+			
+/*---------------------------------------    for statement    ---------------------------------------*/
+
+	statement =	   	{if}		tab* if comparison semi statement | 
+
+			   	{while} 	tab* while comparison semi statement | 
+			   	{for}		tab* for [start]:identifier in [end]:identifier semi statement | 
+			
+			   	{return}	tab* return expression | 
+			   	{print}	tab* print expression comma_expr* | 
+			
+			   	{assign}	tab* identifier assign expression | 
+			   	{minus_eq}	tab* identifier minus_eq expression | 
+			   	{plus_eq}	tab* identifier plus_eq expression | 
+			   	{mult_eq}	tab* identifier mult_eq expression | 
+			   	{div_eq}	tab* identifier div_eq expression | 
+			
+			   	{index}	tab* identifier l_br [expr1]:expression r_br assign [expr2]:expression| 
+		      	   	{slicing}	tab* identifier l_br [expr1]:expression semi [expr2]:expression r_br | 
+				
+				/* Το αλλάξαμε από tab* "assert" Expression ("," Expression )? σε ---> 
+				
+			 ---> */{assert}	tab* assert [expr1]:expression equal [expr2]:expression comma_expr? |
+			
+			   	{function_call}  tab* function_call | 
+			   	{import}	import_module;
+			   
+			
+/*---------------------------------------    function_call    ---------------------------------------*/
+			
+	function_call =   	{function_call} identifier l_par arglist? r_par;
+	
+	arglist = 	   	{arg_list} 	expression comma_expr*;
+	
+/*---------------------------------------    import_module    ---------------------------------------*/
+
+	import_module =    	{import}	import module as_id? comma_module_as_id* | 
+			    	{from_import} 	from module import identifier as_id? comma_id_as_id*;
+			    
+	module = 	    	{module}	id_dot* identifier;
+	
+/*---------------------------------------    logical  and  comparison operators   ---------------------------------------*/
+
+	comparison =		{or} logical_or;
+	
+	logical_or = 		{and} logical_and | 
+				{or} logical_or or logical_and;
+	
+	logical_and = 		{not} logical_not | 
+				{and} logical_and and logical_not;
+	
+	logical_not = 		{condition} condition | 
+				{not} not condition;
+	
+	condition = 	    	{true} 	true | 
+			    	{false}    	false | 
+			    	{less}     	[lprm]:expression   less   [rprm]:expression | 
+			    	{great}    	[lprm]:expression   great   [rprm]:expression | 
+			    	{great_eq} 	[lprm]:expression   great_eq   [rprm]:expression | 
+			    	{less_eq}  	[lprm]:expression   less_eq   [rprm]:expression | 
+			    	{diff}     	[lprm]:expression   diff   [rprm]:expression | 
+			    	{equal}       	[lprm]:expression   equal  [rprm]:expression;
+			    
+	expression = 	    	{mathoperators} 	mathoperators |
+			    	{addition}     	expression   plus   mathoperators | 
+			    	{subtraction}  	expression   minus   mathoperators | 
+			    	{len} 			len l_par expression r_par | 
+			    	{min_max} 		min_max l_par value comma_value* r_par | 
+			    	{br}   		l_br expression comma_expr* r_br | 
+			    	{function_call} 	function_call;			 
+			 
+	comma_value = 	    	{comma_value} comma value;
+			    
+	mathoperators =    	{power} power |  
+	                   	{multiplication}    	mathoperators   mult  power | 
+	                   	{division}		mathoperators   div   power | 
+	                   	{floor_div} 		mathoperators   floor_div   power | 
+	                   	{modulus} 		mathoperators   mod   power;
+			   
+	power =            	{something} 	subscription |
+	                   	{power} 	power pow something;
+
+	subscription = 	{par} 		parentheses | 
+				{sub}		identifier l_br expression r_br;
+	
+	parentheses = 		{something} 	something | 
+				{par} 		l_par expression r_par;
+	
+	something = 		{identifier} 		identifier | 
+	                   	{value} 		value | 
+                           	{true} 		true | 
+			    	{false} 		false;
+			    	
+	value =          	{function_call}  identifier dot function_call | 
+			   	{string}   	string | 
+		           	{number}   	number | 
+		           	{none}     	none;
+
+/*---------------------------------------    dictionary for productions   ---------------------------------------*/
+			   
+	assign_value =			{assign_value}  	assign value;
+	
+	comma_id_assign_value =	{comma_id_assign_value} comma  identifier assign_value?;
+	
+	comma_expr = 	   		{comma_expr}  		comma expression;
+	
+	comma_id_as_id =   		{comma_id_as_id}	comma identifier as_id?;
+	
+	comma_module_as_id =     	{comma_module}  	comma module as_id?;
+	
+	id_dot = 	   	 	{id_dot} 		identifier dot;
+	
+	as_id = 	    		{as_id}		as identifier;
+			    
+	min_max = 	    		{min} 		min | 
+			    		{max} 		max;
+			    

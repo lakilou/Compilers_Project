@@ -1,0 +1,72 @@
+1) Χρήση μη δηλωμένης μεταβλητής:
+
+	Visitor_2: Δεύτερο πέρασμα, τσεκάρει αν έχουν δηλωθεί όλες οι μεταβλητές πριν τη χρήση τους.
+		
+		inAFunctionCallStatement
+	
+		inAAssignStatement
+		inAPlusEqStatement
+		inAMultEqStatement
+		inADivEqStatement
+		
+		inAArraySliceStatement
+		inAArraySliceStatement
+		inAForStatement
+		inAPrintStatement
+		inAReturnStatement
+		
+		inASubscriptionExpression
+		inAPowerExpression
+		inAMultiplicationExpression
+		inADivisionExpression
+		inAFloorDivExpression
+		inAModulusExpression
+		inAAdditionExpression
+		inASubtractionExpression
+		
+		inALessComparison
+		inAGreatComparison
+		inAGreatEqComparison
+		inALessEqComparison
+		inADiffComparison
+		inAEqualComparison
+	
+2) Κλήση μη δηλωμένης συνάρτησης:
+	
+	(εδώ μια συνάρτηση μπορεί να χρησιμοποιηθεί πριν τη δήλωση):
+		Για να το πετύχουμε αυτό, καλούμε πρώτα τον Visitor_1.
+	
+		
+	
+		
+3) Λάθος ορισμός ορισμάτων σε κλήση συνάρτησης:
+
+
+		
+4) Χρήση μεταβλητής διαφορετικού τύπου (π.χ. Integer με String) ως ακέραιο:
+	
+	Visitor_3: Τρίτο πέρασμα, τσεκάρει αν τα comparison και mathoperators υλοποιούνται με μεταβλητές ίδιου τύπου
+		
+		inALessComparison
+		inAGreatComparison
+		inAGreatEqComparison
+		inALessEqComparison
+		inADiffComparison
+		inAEqualComparison
+
+
+5) Πράξεις στις οποίες χρησιμοποιούνται ως τελεστές το: None:
+
+
+
+6) Λάθος τρόπος χρήσης συνάρτησης:
+
+
+
+7) Επανάληψη δήλωσης συνάρτησης με τον ίδιο αριθμό ορισμάτων:
+
+	Visitor_1: Πρώτο πέρασμα, δηλώνει τις συναρτήσεις και τσεκάρει για διπλότυπες συναρτήσεις, με το ίδιο όνομα (μέχρι στιγμής).
+	
+			inAFunction
+
+
